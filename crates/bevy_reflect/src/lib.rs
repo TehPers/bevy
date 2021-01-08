@@ -211,6 +211,7 @@ mod tests {
             d: HashMap<usize, i8>,
             e: Bar,
             f: (i32, Vec<isize>, Bar),
+            g: [bool; 120],
         }
 
         #[derive(Reflect, Eq, PartialEq, Debug)]
@@ -228,6 +229,7 @@ mod tests {
             d: hash_map,
             e: Bar { x: 1 },
             f: (1, vec![1, 2], Bar { x: 1 }),
+            g: [false; 120],
         };
 
         let mut foo_patch = DynamicStruct::default();
@@ -254,6 +256,12 @@ mod tests {
         tuple.insert(bar_patch);
         foo_patch.insert("f", tuple);
 
+        let mut array = DynamicList::default();
+        for _ in 0..120 {
+            array.push(true);
+        }
+        foo_patch.insert("g", array);
+
         foo.apply(&foo_patch);
 
         let mut hash_map = HashMap::default();
@@ -266,6 +274,7 @@ mod tests {
             d: hash_map,
             e: Bar { x: 2 },
             f: (2, vec![3, 4, 5], Bar { x: 2 }),
+            g: [true; 120],
         };
 
         assert_eq!(foo, expected_foo);
@@ -283,6 +292,7 @@ mod tests {
             e: Bar,
             f: String,
             g: (i32, Vec<isize>, Bar),
+            h: [bool; 120],
         }
 
         #[derive(Reflect)]
@@ -301,6 +311,7 @@ mod tests {
             e: Bar { x: 1 },
             f: "hi".to_string(),
             g: (1, vec![1, 2], Bar { x: 1 }),
+            h: [false; 120],
         };
 
         let mut registry = TypeRegistry::default();
@@ -311,6 +322,7 @@ mod tests {
         registry.register::<String>();
         registry.register::<i8>();
         registry.register::<i32>();
+        registry.register::<bool>();
 
         let serializer = ReflectSerializer::new(&foo, &registry);
         let serialized = to_string_pretty(&serializer, PrettyConfig::default()).unwrap();

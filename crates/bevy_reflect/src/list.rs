@@ -139,6 +139,78 @@ impl<'a> Iterator for ListIter<'a> {
     }
 }
 
+impl<T: Reflect, const N: usize> List for [T; N] {
+    fn get(&self, index: usize) -> Option<&dyn Reflect> {
+        <[T]>::get(self, index).map(|value| value as &dyn Reflect)
+    }
+
+    fn get_mut(&mut self, index: usize) -> Option<&mut dyn Reflect> {
+        <[T]>::get_mut(self, index).map(|value| value as &mut dyn Reflect)
+    }
+
+    fn push(&mut self, _value: Box<dyn Reflect>) {
+        panic!("Attempted to push to an array.")
+    }
+
+    fn len(&self) -> usize {
+        N
+    }
+
+    fn iter(&self) -> ListIter {
+        ListIter {
+            list: self,
+            index: 0,
+        }
+    }
+}
+
+impl<T: Reflect, const N: usize> Reflect for [T; N] {
+    fn type_name(&self) -> &str {
+        std::any::type_name::<Self>()
+    }
+
+    fn any(&self) -> &dyn Any {
+        self
+    }
+
+    fn any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+
+    fn apply(&mut self, value: &dyn Reflect) {
+        crate::list_apply(self, value);
+    }
+
+    fn set(&mut self, value: Box<dyn Reflect>) -> Result<(), Box<dyn Reflect>> {
+        *self = value.take()?;
+        Ok(())
+    }
+
+    fn reflect_ref(&self) -> ReflectRef {
+        ReflectRef::List(self)
+    }
+
+    fn reflect_mut(&mut self) -> ReflectMut {
+        ReflectMut::List(self)
+    }
+
+    fn clone_value(&self) -> Box<dyn Reflect> {
+        Box::new(self.clone_dynamic())
+    }
+
+    fn reflect_hash(&self) -> Option<u64> {
+        None
+    }
+
+    fn reflect_partial_eq(&self, value: &dyn Reflect) -> Option<bool> {
+        crate::list_partial_eq(self, value)
+    }
+
+    fn serializable(&self) -> Option<Serializable> {
+        None
+    }
+}
+
 #[inline]
 pub fn list_apply<L: List>(a: &mut L, b: &dyn Reflect) {
     if let ReflectRef::List(list_value) = b.reflect_ref() {
